@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juegos de Grupo - Impostor & Más</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; margin: 0; padding: 15px; text-align: center; }
+        h1, h2, h3 { color: #f39c12; margin-bottom: 10px; }
+        .card { background: #1e1e1e; border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        button { background: #e67e22; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; width: 90%; max-width: 300px; }
+        button:active { transform: scale(0.98); background: #d35400; }
+        .btn-reset { background: #c0392b !important; }
+        .btn-reset:active { background: #962d22 !important; }
+        .btn-vote { background: #2980b9; margin: 5px auto; display: block; }
+        .secret-box { background: #2c3e50; font-size: 20px; font-weight: bold; padding: 20px; border-radius: 10px; margin: 15px 0; word-break: break-word; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        select, input, textarea { padding: 10px; font-size: 15px; border-radius: 6px; border: none; margin: 5px; width: 85%; max-width: 300px; text-align: center; }
+        textarea { height: 80px; resize: vertical; }
+        .hidden { display: none; }
+        .vote-list { text-align: left; max-width: 300px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+    <h1>🎉 Pack de Juegos Sociales</h1>
+
+    <!-- Selección Global de Jugadores -->
+    <div class="card" id="players-setup">
+        <h3>👥 Lista de Jugadores</h3>
+        <p style="font-size:12px; color:#aaa;">Ingresa los nombres separados por comas:</p>
+        <textarea id="global-players">Enzo, Pedro, Morena, Bastian, Mateo, Paloma</textarea>
+    </div>
+
+    <!-- Menú Principal -->
+    <div id="menu">
+        <button onclick="showGame('impostor')">🕵️ El Impostor</button>
+        <button onclick="showGame('probable')">🔮 ¿Quién es más probable?</button>
+        <button onclick="showGame('cincoSeg')">⏱️ 5 Segundos</button>
+        <button onclick="showGame('mimica')">🎭 Mímica Flash</button>
+        <button onclick="showGame('verdadReto')">🔥 Verdad o Reto</button>
+        <button onclick="showGame('ceroCien')">📊 Cero a Cien</button>
+    </div>
+
+    <!-- 1. JUEGO DEL IMPOSTOR -->
+    <div id="game-impostor" class="card hidden">
+        <h2>🕵️ El Impostor</h2>
+        
+        <!-- Configuración -->
+        <div id="imp-setup">
+            <label><input type="checkbox" id="modo-caos"> ⚡ Modo Caos</label><br><br>
+            <button onclick="iniciarImpostor()">Comenzar Partida</button>
+        </div>
+
+        <!-- Fase de Revelación de Palabras -->
+        <div id="imp-play" class="hidden">
+            <h3 id="jugador-turn">Jugador 1</h3>
+            <div id="secret-card" class="secret-box">👁️ Toca para revelar tu palabra</div>
+            <button id="btn-revelar" onclick="revelarPalabra()">Mostrar Palabra</button>
+            <button id="btn-siguiente" class="hidden" onclick="siguienteJugador()">Siguiente Jugador</button>
+        </div>
+
+        <!-- Fase de Votación -->
+        <div id="imp-voting" class="hidden">
+            <h3>🗳️ Votación Secreta</h3>
+            <p id="voter-turn">Le toca votar a: Jugador</p>
+            <p>¿Quién crees que es el impostor?</p>
+            <div id="vote-options"></div>
+        </div>
+
+        <!-- Resultado Votación -->
+        <div id="imp-results" class="hidden">
+            <h3>📊 Resultados de la Elección</h3>
+            <div id="result-text" class="secret-box"></div>
+        </div>
+
+        <br>
+        <button class="btn-reset" onclick="iniciarImpostor()">🔄 Reiniciar Juego</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <!-- 2. MÁS PROBABLE QUE -->
+    <div id="game-probable" class="card hidden">
+        <h2>🔮 ¿Quién es más probable que...</h2>
+        <h3 id="prob-player" style="color:#e67e22;"></h3>
+        <div class="secret-box" id="prob-text">Toca para empezar</div>
+        <button onclick="siguienteProbable()">Siguiente Pregunta</button>
+        <br>
+        <button class="btn-reset" onclick="siguienteProbable()">🔄 Reiniciar / Otra Pregunta</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <!-- 3. 5 SEGUNDOS -->
+    <div id="game-cincoSeg" class="card hidden">
+        <h2>⏱️ 5 Segundos</h2>
+        <h3 id="cinco-player" style="color:#e67e22;"></h3>
+        <p>¡Nombra 3 cosas antes de que el tiempo llegue a cero!</p>
+        <div class="secret-box" id="cinco-text">Toca para empezar</div>
+        <h1 id="timer" style="color: #e74c3c; font-size:48px;">5</h1>
+        <button onclick="iniciar5Segundos()">▶️ Iniciar Tiempo</button>
+        <br>
+        <button class="btn-reset" onclick="siguienteCincoSeg()">🔄 Reiniciar Rincón</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <!-- 4. MÍMICA FLASH -->
+    <div id="game-mimica" class="card hidden">
+        <h2>🎭 Mímica Flash</h2>
+        <h3 id="mimica-player" style="color:#e67e22;"></h3>
+        <p>Haz mímica de la palabra sin hablar:</p>
+        <div class="secret-box" id="mimica-text">Toca para empezar</div>
+        <button onclick="siguienteMimica()">Siguiente Palabra</button>
+        <br>
+        <button class="btn-reset" onclick="siguienteMimica()">🔄 Reiniciar / Cambiar</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <!-- 5. VERDAD O RETO -->
+    <div id="game-verdadReto" class="card hidden">
+        <h2>🔥 Verdad o Reto</h2>
+        <h3 id="vr-player" style="color:#e67e22;"></h3>
+        <div class="secret-box" id="vr-text">Selecciona una opción</div>
+        <button onclick="getVR('Verdad')">😇 Verdad</button>
+        <button onclick="getVR('Reto')">😈 Reto</button>
+        <br>
+        <button class="btn-reset" onclick="resetVR()">🔄 Reiniciar Turno</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <!-- 6. CERO A CIEN -->
+    <div id="game-ceroCien" class="card hidden">
+        <h2>📊 Cero a Cien</h2>
+        <p>Del 0 al 100... ¿Qué tan de acuerdo están todos?</p>
+        <div class="secret-box" id="cc-text">Toca para empezar</div>
+        <button onclick="siguienteCeroCien()">Siguiente Pregunta</button>
+        <br>
+        <button class="btn-reset" onclick="siguienteCeroCien()">🔄 Reiniciar / Otra Pregunta</button>
+        <button onclick="volverMenu()">⬅️ Menú Principal</button>
+    </div>
+
+    <script>
+        // BASE DE DATOS Y PALABRAS
+        const palabrasImpostor = [
+            "Mario profe", "Morena 4to", "Enzo", "Raquel", "Paloma", "Pedro", "Bastian", "Tito", "Simon F", "Simon M",
+            "Bianca", "Silvi profe", "Mateo A", "Felipe P", "Santino C", "Mariam", "Esequiel", "Anabel directora", "Anabel 4to",
+            "Duki", "Perro", "Lauty Gram", "Ampi profe", "Belen profe", "Luli profe", "Gonza profe", "Gabi", "Lucho",
+            "Maxi preceptor", "Vero", "Alvaro buffet", "Mia buffet", "Lola buffet", "Bad Bunny", "Mama de Enzo",
+            "Avion a chorro", "Taylor Swift", "Agustin F", "Nato", "Rocio", "Colegio del Sol", "Patio", "Casa", "Calle",
+            "Villero", "Pasion", "Cheto", "City Bell", "La Plata", "Buenos Aires", "España", "Brasil", "Corea del Sur",
+            "BTS", "McDonalds", "Cancion", "GTA 5", "YouTube", "Minecraft", "Videojuego", "Baile", "Perreo", "Relacion",
+            "Amor", "Amistad", "Grupo de amigos", "Nico Rosas", "Lola profe", "Agusto profe de lengua",
+            "Estudiantes de La Plata", "Boca Juniors", "Argentina", "Mundial", "River Plate", "Huracan", "Pedos", "Vomitar",
+            "Departamento", "Escuela", "Auto", "Donald Trump", "Cristina", "Milei", "Messi", "Enzo Fernandez", "Nico Paz",
+            "Cristiano Ronaldo", "Mbappe", "Real Madrid", "Manchester City", "Manchester United", "Barcelona", "Milan",
+            "Maradona", "Haaland", "Cacatua", "Gato", "Gato naranja de Enzo", "Casa de Enzo", "Casa de Pedro", "Alentar", "Elegante"
+        ];
+
+        const probables = [
+            "¿Quién es más probable que se quede dormido en clase?",
+            "¿Quién es más probable que se vuelva famoso en TikTok?",
+            "¿Quién es más probable que pierda el celular hoy?",
+            "¿Quién es más probable que termine preso por una boludez?",
+            "¿Quién es más probable que invite la comida en McDonald's?",
+            "¿Quién es más probable que se tropiece caminando por la calle?"
+        ];
+
+        const cincoSeg = [
+            "Nombra 3 profesores del colegio",
+            "Nombra 3 futbolistas de la selección",
+            "Nombra 3 canciones de Duki o Lauty Gram",
+            "Nombra 3 lugares de City Bell / La Plata",
+            "Nombra 3 videojuegos populares"
+        ];
+
+        const mimicas = ["Avión a chorro", "Gato naranja de Enzo", "Baile de perreo", "Cacatúa", "Profesor enojado", "Messi festejando", "Donald Trump"];
+        const verdades = ["¿Quién del grupo te cae peor en secreto?", "¿Cuál fue el papelón más grande que hiciste en la escuela?", "¿Alguna vez le mentiste a un amigo de esta ronda?"];
+        const retos = ["Haz un baile de perreo de 10 segundos sin música.", "Imita a un profesor del colegio hasta que adivinen quién es.", "Déjale mandar un mensaje a elección a un amigo desde tu WhatsApp."];
+        const ceroCien = ["¿Qué tan cheto es City Bell?", "¿Qué tan buena es la comida del buffet?", "¿Qué tan difícil es aprobar Lengua?", "¿Qué tan probable es que este grupo viaje junto alguna vez?"];
+
+        // Obtener Lista de Jugadores
+        function getJugadores() {
+            let raw = document.getElementById('global-players').value;
+            let list = raw.split(',').map(n => n.trim()).filter(n => n.length > 0);
+            return list.length > 0 ? list : ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"];
+        }
+
+        function getJugadorRandom() {
+            let list = getJugadores();
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        // LÓGICA DEL IMPOSTOR
+        let listaJugadores = [];
+        let jugadorActual = 0;
+        let asignaciones = [];
+        let votos = {};
+        let votanteActual = 0;
+        let palabraSeleccionada = "";
+
+        function iniciarImpostor() {
+            listaJugadores = getJugadores();
+            const modoCaos = document.getElementById('modo-caos').checked;
+            palabraSeleccionada = palabrasImpostor[Math.floor(Math.random() * palabrasImpostor.length)];
+            
+            asignaciones = [];
+            votos = {};
+            listaJugadores.forEach(j => votos[j] = 0);
+
+            let impostorIndex = Math.floor(Math.random() * listaJugadores.length);
+
+            for (let i = 0; i < listaJugadores.length; i++) {
+                if (!modoCaos) {
+                    if (i === impostorIndex) {
+                        asignaciones.push({ rol: "IMPOSTOR", palabra: "🚨 ERES EL IMPOSTOR 🚨" });
+                    } else {
+                        asignaciones.push({ rol: "INOCENTE", palabra: palabraSeleccionada });
+                    }
+                } else {
+                    let randCaos = Math.random();
+                    if (randCaos < 0.30) {
+                        asignaciones.push({ rol: "IMPOSTOR", palabra: "🚨 ERES EL IMPOSTOR 🚨" });
+                    } else if (randCaos < 0.60) {
+                        let randWord = palabrasImpostor[Math.floor(Math.random() * palabrasImpostor.length)];
+                        asignaciones.push({ rol: "IMPOSTOR_FALSO", palabra: randWord });
+                    } else {
+                        asignaciones.push({ rol: "INOCENTE", palabra: palabraSeleccionada });
+                    }
+                }
+            }
+
+            jugadorActual = 0;
+            document.getElementById('imp-setup').classList.add('hidden');
+            document.getElementById('imp-voting').classList.add('hidden');
+            document.getElementById('imp-results').classList.add('hidden');
+            document.getElementById('imp-play').classList.remove('hidden');
+            actualizarTurnoImpostor();
+        }
+
+        function actualizarTurnoImpostor() {
+            document.getElementById('jugador-turn').innerText = `Turno de: ${listaJugadores[jugadorActual]}`;
+            document.getElementById('secret-card').innerText = "👁️ Toca para revelar tu palabra";
+            document.getElementById('btn-revelar').classList.remove('hidden');
+            document.getElementById('btn-siguiente').classList.add('hidden');
+        }
+
+        function revelarPalabra() {
+            document.getElementById('secret-card').innerText = asignaciones[jugadorActual].palabra;
+            document.getElementById('btn-revelar').classList.add('hidden');
+            document.getElementById('btn-siguiente').classList.remove('hidden');
+        }
+
+        function siguienteJugador() {
+            jugadorActual++;
+            if (jugadorActual < listaJugadores.length) {
+                actualizarTurnoImpostor();
+            } else {
+                iniciarVotacion();
+            }
+        }
+
+        // SISTEMA DE VOTACIÓN
+        function iniciarVotacion() {
+            document.getElementById('imp-play').classList.add('hidden');
+            document.getElementById('imp-voting').classList.remove('hidden');
+            votanteActual = 0;
+            mostrarTurnoVoto();
+        }
+
+        function mostrarTurnoVoto() {
+            document.getElementById('voter-turn').innerText = `Vota: ${listaJugadores[votanteActual]}`;
+            let html = "";
+            listaJugadores.forEach(nombre => {
+                html += `<button class="btn-vote" onclick="registrarVoto('${nombre}')">Votar a ${nombre}</button>`;
+            });
+            document.getElementById('vote-options').innerHTML = html;
+        }
+
+        function registrarVoto(sospechoso) {
+            votos[sospechoso]++;
+            votanteActual++;
+            if (votanteActual < listaJugadores.length) {
+                mostrarTurnoVoto();
+            } else {
+                mostrarResultadosVoto();
+            }
+        }
+
+        function mostrarResultadosVoto() {
+            document.getElementById('imp-voting').classList.add('hidden');
+            document.getElementById('imp-results').classList.remove('hidden');
+
+            let masVotado = "";
+            let maxVotos = -1;
+            for (let j in votos) {
+                if (votos[j] > maxVotos) {
+                    maxVotos = votos[j];
+                    masVotado = j;
+                }
+            }
+
+            let indexMasVotado = listaJugadores.indexOf(masVotado);
+            let infoMasVotado = asignaciones[indexMasVotado];
+
+            let resHTML = `El grupo votó a: <b>${masVotado}</b> (${maxVotos} votos).<br><br>`;
+
+            if (infoMasVotado.rol === "IMPOSTOR" || infoMasVotado.rol === "IMPOSTOR_FALSO") {
+                resHTML += `🎉 ¡CORRECTO! ${masVotado} era el Impostor.`;
+            } else {
+                resHTML += `💀 ¡INCORRECTO! ${masVotado} era INOCENTE.`;
+            }
+
+            resHTML += `<br><small style='font-size:14px; margin-top:10px; display:block;'>Palabra real: ${palabraSeleccionada}</small>`;
+            document.getElementById('result-text').innerHTML = resHTML;
+        }
+
+        // OTROS JUEGOS CON JUGADORES
+        function siguienteProbable() {
+            document.getElementById('prob-player').innerText = "👉 Le toca a: " + getJugadorRandom();
+            document.getElementById('prob-text').innerText = probables[Math.floor(Math.random() * probables.length)];
+        }
+
+        let timerInterval;
+        function siguienteCincoSeg() {
+            document.getElementById('cinco-player').innerText = "👉 Le toca a: " + getJugadorRandom();
+            document.getElementById('cinco-text').innerText = cincoSeg[Math.floor(Math.random() * cincoSeg.length)];
+            document.getElementById('timer').innerText = "5";
+            clearInterval(timerInterval);
+        }
+
+        function iniciar5Segundos() {
+            let timeLeft = 5;
+            document.getElementById('timer').innerText = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timer').innerText = "¡TIEMPO!";
+                }
+            }, 1000);
+        }
+
+        function siguienteMimica() {
+            document.getElementById('mimica-player').innerText = "👉 Actúa: " + getJugadorRandom();
+            document.getElementById('mimica-text').innerText = mimicas[Math.floor(Math.random() * mimicas.length)];
+        }
+
+        function getVR(tipo) {
+            document.getElementById('vr-player').innerText = "👉 Turno de: " + getJugadorRandom();
+            let list = tipo === 'Verdad' ? verdades : retos;
+            document.getElementById('vr-text').innerText = list[Math.floor(Math.random() * list.length)];
+        }
+
+        function resetVR() {
+            document.getElementById('vr-player').innerText = "";
+            document.getElementById('vr-text').innerText = "Selecciona una opción";
+        }
+
+        function siguienteCeroCien() {
+            document.getElementById('cc-text').innerText = ceroCien[Math.floor(Math.random() * ceroCien.length)];
+        }
+
+        // NAVEGACIÓN
+        function showGame(id) {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('game-' + id).classList.remove('hidden');
+
+            if (id === 'probable') siguienteProbable();
+            if (id === 'cincoSeg') siguienteCincoSeg();
+            if (id === 'mimica') siguienteMimica();
+            if (id === 'ceroCien') siguienteCeroCien();
+        }
+
+        function volverMenu() {
+            const games = document.querySelectorAll('.card');
+            games.forEach(g => {
+                if (g.id !== 'players-setup') g.classList.add('hidden');
+            });
+            document.getElementById('menu').classList.remove('hidden');
+            clearInterval(timerInterval);
+        }
+    </script>
+</body>
+</html>
